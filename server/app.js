@@ -13,48 +13,72 @@ app.use(staticCache(path.join(__dirname, '../dist'), {
   gzip: true
 }))
 app.use(bodyParser())
+app.use(async (ctx, next) => {
+  const {
+    req,
+    res,
+    response,
+    request
+  } = ctx
+  ctx.set({
+    'Access-Control-Allow-Origin': ctx.headers.origin,
+    'Access-Control-Allow-Methods': 'DELETE,PUT,POST,GET,OPTIONS',
+    'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Cookie, Host',
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json;charset=utf-8'
+  })
+  await next()
+  let method = ctx.method.toLocaleUpperCase()
+  if (method === 'OPTIONS') {
+    ctx.status = 200
+    res.end()
+  }
+})
 // 所有路由
-router.post('/wawawu/rest/login', async ctx => {
+async function promiseRequest (ctx) {
+  let data = ''
+ return new Promise((resolve, reject) => {
+   const headers = {
+     ...ctx.headers,
+     host: 'wa.leyaoyao.com',
+     origin: 'https://wa.leyaoyao.com',
+     referer: 'https://wa.leyaoyao.com/'
+   }
   const req = https.request({
     hostname: 'wa.leyaoyao.com',
     // port: 443,
     path: ctx.url,
     method: ctx.method,
-    headers: ctx.headers
+    headers
   }, (res) => {
-    console.log('状态码:', res.statusCode)
-    console.log('请求头:', res.headers)
-
-    res.on('data', (d) => {
-      process.stdout.write(d)
+console.log(res)
+    res.on('data', (result) => {
+      data += result.toString('utf8')
+    })
+    res.on('end', () => {
+      resolve(data)
     })
   })
 
   req.on('error', (e) => {
-    console.error(e)
+    reject(e)
   })
-  req.end()
+  // req.write(JSON.stringify(ctx.request.body || {}))
+  req.end(JSON.stringify(ctx.request.body || {}), 'utf8', (resu) => {
+    console.log(resu)
+  })
+ })
+}
+router.post('/wawawu/rest/login', async ctx => {
 })
 router.post('/wawawu/rest/orderpayment/queryOrderRecordList', async ctx => {
-  const req = https.request({
-    hostname: 'wa.leyaoyao.com',
-    // port: 443,
-    path: ctx.url,
-    method: ctx.method,
-    headers: ctx.headers
-  }, (res) => {
-    console.log('状态码:', res.statusCode)
-    console.log('请求头:', res.headers)
-
-    res.on('data', (d) => {
-      process.stdout.write(d)
-    })
-  })
-
-  req.on('error', (e) => {
-    console.error(e)
-  })
-  req.end()
+  try {
+    const result = await promiseRequest(ctx)
+    ctx.body = result
+    ctx.status = 200
+  } catch (e) {
+    console.log(e)
+  }
 })
 app.use(router.routes())
 // spa页
@@ -62,7 +86,7 @@ app.use(router.routes())
 //   console.log('gg')
 //   fs.readFile(path.join(__dirname, '../dist/index.html'), 'utf-8', (err, content) => {
 //     if (err) {
-//       console.log('We cannot open "index.html" file.')
+//       console.log('We cannot open 'index.html' file.')
 //     }
 //     cxt.type = 'html'
 //     cxt.status = 200
