@@ -42,11 +42,7 @@ const columns = [
   { title: '实际支付额', dataIndex: 'totalFee' }
 ]
 
-const tableData = [
-  // { key: 1, id: 'admin', name: '管理员', creator: 'Jack', description: 'My name is John Brown, I am 32 years old, living in New York No. 1 Lake Park.', createTime: '2019-09-04 10:43' },
-  // { key: 2, id: 'svip', name: '超级会员', creator: 'Mark', description: 'My name is Jim Green, I am 42 years old, living in London No. 1 Lake Park.', createTime: '2019-09-04 10:43' },
-  // { key: 3, id: 'vip', name: '普通会员', creator: 'Linda', description: 'My name is Joe Black, I am 32 years old, living in Sidney No. 1 Lake Park.', createTime: '2019-09-04 10:43' }
-]
+const tableData = []
 export default {
   name: 'home',
   data () {
