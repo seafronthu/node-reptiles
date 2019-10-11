@@ -60,8 +60,6 @@ export default {
       exportLoading: false
     }
   },
-  components: {
-  },
   methods: {
     handleAdd () {
       const { value } = this
@@ -136,7 +134,6 @@ export default {
         autoWidth: true,
         filename: '订单数据'
       }
-      console.log(params)
       excel.export_array_to_excel(params)
       this.exportLoading = false
     },
@@ -145,7 +142,6 @@ export default {
     }
   },
   created () {
-    console.log(this)
   }
 }
 </script>
