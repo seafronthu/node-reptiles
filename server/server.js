@@ -92,23 +92,32 @@ class Main {
       this.everyDayOnceTask({ callback, delay, hour, status })
     }, delay)
   }
-  everyDayManyTask ({ callback, num, intervalHours, delay }) {
+  everyDayManyTask ({ callback, today = new Date(), startNum, intervalHours, delay, endNum = 0 }) {
     const currDate = new Date()
+    const currDay = currDate.getDay()
+    const now = today.getDay()
     const currHour = currDate.getHours()
     const intervalSmallHour = intervalHours[0]
     const intervalLargeHour = intervalHours[1]
-    if (num > 0 && currHour >= intervalSmallHour && currHour <= intervalLargeHour) {
-      --num
+    //! 当前次数大于0 且在区间中
+    if (startNum > 0 && currHour >= intervalSmallHour && currHour <= intervalLargeHour) {
+      --startNum
+      ++endNum
       callback()
     } else {
       delay = 30 * 60 * 1000
     }
     const difference = intervalLargeHour - currHour
-    if (difference >= 2 && num > 0) {
-      delay = (difference - 1) / num * 60 * 60 * 1000
+    //! 区间最大值和当前小时的差值大于等于2且有次数的时候，计时器间隔重新计算
+    if (difference >= 2 && startNum > 0) {
+      delay = (difference - 1) / startNum * 60 * 60 * 1000
+    }
+    if (currDay !== now) {
+      today = currDate
+      startNum ^= endNum ^= startNum ^= endNum
     }
     setTimeout(() => {
-      this.everyDayOnceTask({ callback, num, intervalHours, delay })
+      this.everyDayOnceTask({ callback, today, startNum, intervalHours, delay, endNum })
     }, delay)
   }
   getDingTalkBody (params, msgtype) {
@@ -161,6 +170,7 @@ class Main {
     }
     const value = this.getRandomValue(JSON.parse(leetcodeRes).stat_status_pairs)
     const body = this.getDingTalkBody(this.arrangeLeetcodeData(value), 'actionCard')
+    // 计算机精英部队
     const dingtalkRes = await this.request({
       protocol: 'https:',
       host: 'oapi.dingtalk.com',
@@ -171,7 +181,18 @@ class Main {
       method: 'post',
       body
     })
-    return dingtalkRes
+    // 计算机高级会员
+    const dingtalkRes2 = await this.request({
+      protocol: 'https:',
+      host: 'oapi.dingtalk.com',
+      headers: {
+        'Content-Type': 'application/json;charset=utf-8'
+      },
+      pathname: '/robot/send?access_token=6ab294094a0a7f6ff94103cb37a826b009ed8ba81221e09e2dfaa3429bf47767',
+      method: 'post',
+      body
+    })
+    return dingtalkRes2
   }
   arrangeZhihuData () {
     let data = this.zhihuData.splice(0, 5)
@@ -196,6 +217,7 @@ class Main {
     }
     const data = this.arrangeZhihuData()
     const body = this.getDingTalkBody(data, 'feedCard')
+    // 钉钉小分队
     const dingtalkRes = await this.request({
       protocol: 'https:',
       host: 'oapi.dingtalk.com',
@@ -209,15 +231,15 @@ class Main {
     return dingtalkRes
   }
   robot () {
-    const leetcodeDelay = 10 * 60 * 1000
-    this.everyDayOnceTask({
-      callback: () => {
-        this.leetcodeSendMessage()
-      },
-      delay: leetcodeDelay,
-      status: true,
-      hour: 20
-    })
+    // const leetcodeDelay = 10 * 60 * 1000
+    // this.everyDayOnceTask({
+    //   callback: () => {
+    //     this.leetcodeSendMessage()
+    //   },
+    //   delay: leetcodeDelay,
+    //   status: true,
+    //   hour: 20
+    // })
     const zhihuDelay = 30 * 60 * 1000
     this.everyDayManyTask({
       callback: () => {
