@@ -171,7 +171,7 @@ class Main {
     const value = this.getRandomValue(JSON.parse(leetcodeRes).stat_status_pairs)
     const body = this.getDingTalkBody(this.arrangeLeetcodeData(value), 'actionCard')
     // 计算机精英部队
-    const dingtalkRes = await this.request({
+    await this.request({
       protocol: 'https:',
       host: 'oapi.dingtalk.com',
       headers: {
@@ -231,15 +231,15 @@ class Main {
     return dingtalkRes
   }
   robot () {
-    // const leetcodeDelay = 10 * 60 * 1000
-    // this.everyDayOnceTask({
-    //   callback: () => {
-    //     this.leetcodeSendMessage()
-    //   },
-    //   delay: leetcodeDelay,
-    //   status: true,
-    //   hour: 20
-    // })
+    const leetcodeDelay = 10 * 60 * 1000
+    this.everyDayOnceTask({
+      callback: () => {
+        this.leetcodeSendMessage()
+      },
+      delay: leetcodeDelay,
+      status: true,
+      hour: 20
+    })
     const zhihuDelay = 30 * 60 * 1000
     this.everyDayManyTask({
       callback: () => {
