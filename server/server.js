@@ -228,6 +228,7 @@ class Main {
           method: 'GET'
         })
       })
+      console.log(zhihuRes)
       if (zhihuRes[1]) {
         this.zhihuData = JSON.parse(zhihuRes[1]).data
       }
@@ -238,7 +239,7 @@ class Main {
     const data = this.arrangeZhihuData()
     const body = this.getDingTalkBody(data, 'feedCard')
     // 钉钉小分队
-    const dingtalkRes = await errorCaptured(async () => {
+    await errorCaptured(async () => {
       return this.request({
         protocol: 'https:',
         host: 'oapi.dingtalk.com',
@@ -250,24 +251,37 @@ class Main {
         body
       })
     })
-    return dingtalkRes
+    // 接口对接
+    const dingtalkRes2 = await errorCaptured(async () => {
+      return this.request({
+        protocol: 'https:',
+        host: 'oapi.dingtalk.com',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        pathname: '/robot/send?access_token=6b682106ff49ce905ab52a5d029794516c942cebec6080a73dbe320cf7e5e612',
+        method: 'post',
+        body
+      })
+    })
+    return dingtalkRes2
   }
   robot () {
-    const leetcodeDelay = 10 * 60 * 1000
-    this.everyDayOnceTask({
-      callback: () => {
-        this.leetcodeSendMessage()
-      },
-      delay: leetcodeDelay,
-      status: true,
-      hour: 10
-    })
+    // const leetcodeDelay = 10 * 60 * 1000
+    // this.everyDayOnceTask({
+    //   callback: () => {
+    //     this.leetcodeSendMessage()
+    //   },
+    //   delay: leetcodeDelay,
+    //   status: true,
+    //   hour: 11
+    // })
     const zhihuDelay = 30 * 60 * 1000
     this.everyDayManyTask({
       callback: () => {
         this.zhihuSendMessage()
       },
-      num: 10,
+      startNum: 10,
       delay: zhihuDelay,
       intervalHours: [10, 22]
     })
