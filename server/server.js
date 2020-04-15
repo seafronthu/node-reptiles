@@ -118,7 +118,7 @@ class Main {
       startNum ^= endNum ^= startNum ^= endNum
     }
     setTimeout(() => {
-      this.everyDayOnceTask({ callback, today, startNum, intervalHours, delay, endNum })
+      this.everyDayManyTask({ callback, today, startNum, intervalHours, delay, endNum })
     }, delay)
   }
   getDingTalkBody (params, msgtype) {
