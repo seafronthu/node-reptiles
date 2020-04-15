@@ -228,7 +228,6 @@ class Main {
           method: 'GET'
         })
       })
-      console.log(zhihuRes)
       if (zhihuRes[1]) {
         this.zhihuData = JSON.parse(zhihuRes[1]).data
       }
