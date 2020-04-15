@@ -267,15 +267,15 @@ class Main {
     return dingtalkRes2
   }
   robot () {
-    // const leetcodeDelay = 10 * 60 * 1000
-    // this.everyDayOnceTask({
-    //   callback: () => {
-    //     this.leetcodeSendMessage()
-    //   },
-    //   delay: leetcodeDelay,
-    //   status: true,
-    //   hour: 11
-    // })
+    const leetcodeDelay = 10 * 60 * 1000
+    this.everyDayOnceTask({
+      callback: () => {
+        this.leetcodeSendMessage()
+      },
+      delay: leetcodeDelay,
+      status: true,
+      hour: 10
+    })
     const zhihuDelay = 30 * 60 * 1000
     this.everyDayManyTask({
       callback: () => {
