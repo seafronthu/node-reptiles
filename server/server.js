@@ -1,4 +1,5 @@
 const https = require('https')
+const { errorCaptured } = require('./lib/utils')
 // const fs = require('fs')
 class Main {
   // difficultStatus = [
@@ -158,39 +159,51 @@ class Main {
     }
   }
   async leetcodeSendMessage () {
-    const leetcodeRes = await this.request({
-      protocol: 'https:',
-      host: 'leetcode-cn.com',
-      pathname: '/api/problems/all/',
-      method: 'GET'
+    const leetcodeRes = await errorCaptured(async () => {
+      return this.request({
+        protocol: 'https:',
+        host: 'leetcode-cn.com',
+        pathname: '/api/problems/all/',
+        method: 'GET'
+      })
     })
-    const leetCodeData = JSON.parse(leetcodeRes).stat_status_pairs
+    let leetCodeData = []
+    if (leetcodeRes[1]) {
+      const leetcodeRes1 = leetcodeRes[1]
+      // leetCodeData = JSON.parse(leetcodeRes1).stat_status_pairs
+      const leetCodeDataParse = JSON.parse(leetcodeRes1)
+      leetCodeData = leetCodeDataParse.stat_status_pairs
+    }
     if (!leetCodeData || leetCodeData.length === 0) {
       return
     }
-    const value = this.getRandomValue(JSON.parse(leetcodeRes).stat_status_pairs)
+    const value = this.getRandomValue(leetCodeData)
     const body = this.getDingTalkBody(this.arrangeLeetcodeData(value), 'actionCard')
     // 计算机精英部队
-    await this.request({
-      protocol: 'https:',
-      host: 'oapi.dingtalk.com',
-      headers: {
-        'Content-Type': 'application/json;charset=utf-8'
-      },
-      pathname: '/robot/send?access_token=37850974cf16cebeaf14e1316aa6ae4a045897202757ef29201a098a78572c87',
-      method: 'post',
-      body
+    await errorCaptured(async () => {
+      return this.request({
+        protocol: 'https:',
+        host: 'oapi.dingtalk.com',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        pathname: '/robot/send?access_token=37850974cf16cebeaf14e1316aa6ae4a045897202757ef29201a098a78572c87',
+        method: 'post',
+        body
+      })
     })
     // 计算机高级会员
-    const dingtalkRes2 = await this.request({
-      protocol: 'https:',
-      host: 'oapi.dingtalk.com',
-      headers: {
-        'Content-Type': 'application/json;charset=utf-8'
-      },
-      pathname: '/robot/send?access_token=6ab294094a0a7f6ff94103cb37a826b009ed8ba81221e09e2dfaa3429bf47767',
-      method: 'post',
-      body
+    const dingtalkRes2 = await errorCaptured(async () => {
+      return this.request({
+        protocol: 'https:',
+        host: 'oapi.dingtalk.com',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        pathname: '/robot/send?access_token=6ab294094a0a7f6ff94103cb37a826b009ed8ba81221e09e2dfaa3429bf47767',
+        method: 'post',
+        body
+      })
     })
     return dingtalkRes2
   }
@@ -207,26 +220,35 @@ class Main {
   }
   async zhihuSendMessage () {
     if (this.zhihuData.length === 0) {
-      const zhihuRes = await this.request({
-        protocol: 'https:',
-        host: 'www.zhihu.com',
-        pathname: '/api/v3/feed/topstory/hot-lists/total?limit=50&desktop=true',
-        method: 'GET'
+      const zhihuRes = await errorCaptured(async () => {
+        return this.request({
+          protocol: 'https:',
+          host: 'www.zhihu.com',
+          pathname: '/api/v3/feed/topstory/hot-lists/total?limit=50&desktop=true',
+          method: 'GET'
+        })
       })
-      this.zhihuData = JSON.parse(zhihuRes).data
+      if (zhihuRes[1]) {
+        this.zhihuData = JSON.parse(zhihuRes[1]).data
+      }
+    }
+    if (this.zhihuData.length === 0) {
+      return
     }
     const data = this.arrangeZhihuData()
     const body = this.getDingTalkBody(data, 'feedCard')
     // 钉钉小分队
-    const dingtalkRes = await this.request({
-      protocol: 'https:',
-      host: 'oapi.dingtalk.com',
-      headers: {
-        'Content-Type': 'application/json;charset=utf-8'
-      },
-      pathname: '/robot/send?access_token=39e10e2a467663a13a5df7b2400948c2cd9f73fc9bb8b4a67c65ed4090f1d2e5',
-      method: 'post',
-      body
+    const dingtalkRes = await errorCaptured(async () => {
+      return this.request({
+        protocol: 'https:',
+        host: 'oapi.dingtalk.com',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        pathname: '/robot/send?access_token=39e10e2a467663a13a5df7b2400948c2cd9f73fc9bb8b4a67c65ed4090f1d2e5',
+        method: 'post',
+        body
+      })
     })
     return dingtalkRes
   }
@@ -238,7 +260,7 @@ class Main {
       },
       delay: leetcodeDelay,
       status: true,
-      hour: 20
+      hour: 10
     })
     const zhihuDelay = 30 * 60 * 1000
     this.everyDayManyTask({
