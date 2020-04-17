@@ -10,6 +10,7 @@ class Main {
   // ]
   constructor () {
     this.zhihuData = []
+    this.juejinData = []
     this.difficultStatus = [{
       color: '#9e9e9e',
       name: '未知'
@@ -80,14 +81,28 @@ class Main {
     }
     return item
   }
-  everyDayOnceTask ({ callback, delay, hour, status }) {
+  everyDayOnceTask ({ callback, delay, hour, status, initDelay }) {
     const currDate = new Date()
     const currHour = currDate.getHours()
-    if (currHour === hour && status) {
+    const currMinute = currDate.getMinutes()
+    let surplusHour
+    let surplus
+    if (currHour > hour) {
+      surplusHour = 24 - currHour + hour
+      surplus = (24 - currHour - currMinute / 60 + hour) * 1000 * 60 * 60
+    } else {
+      surplusHour = hour - currHour
+      surplus = (hour - currHour - currMinute / 60) * 1000 * 60 * 60
+    }
+    if (surplusHour === 0 && status) {
       status = false
       callback()
-    } else if (currHour !== hour) {
+    } else if (surplusHour <= 2 && surplusHour > 0) {
+      initDelay = surplus / 10
+      initDelay = initDelay <= 1000 ? 1000 : initDelay
+    } else {
       status = true
+      initDelay = 60 * 60 * 1000
     }
     setTimeout(() => {
       this.everyDayOnceTask({ callback, delay, hour, status })
@@ -98,28 +113,44 @@ class Main {
     const currDay = currDate.getDay()
     const now = today.getDay()
     const currHour = currDate.getHours()
+    const currMinute = currDate.getMinutes()
     const intervalSmallHour = intervalHours[0]
     const intervalLargeHour = intervalHours[1]
     //! 当前次数大于0 且在区间中
-    if (startNum > 0 && currHour >= intervalSmallHour && currHour <= intervalLargeHour) {
+    let initDelay = delay
+    let surplusHour
+    let surplus
+    if (currHour > intervalLargeHour) {
+      surplusHour = 24 - currHour + intervalSmallHour
+      surplus = (24 - currHour - currMinute / 60 + intervalSmallHour) * 60 * 60 * 1000
+      if (surplusHour <= 2) {
+        initDelay = surplus / 10
+        initDelay = initDelay < 1000 ? 1000 : initDelay
+      } else {
+
+      }
+    } else if (currHour < intervalSmallHour) {
+      surplusHour = intervalSmallHour - currHour
+      surplus = (intervalSmallHour - currHour - currMinute / 60) * 60 * 60 * 1000
+      if (surplusHour <= 2) {
+        initDelay = surplus / 10
+        initDelay = initDelay < 1000 ? 1000 : initDelay
+      }
+    } else if (startNum > 0) {
       --startNum
       ++endNum
       callback()
-    } else {
-      delay = 30 * 60 * 1000
+      surplus = (intervalLargeHour - currHour - currMinute / 60) * 60 * 60 * 1000
+      initDelay = surplus / startNum
     }
-    const difference = intervalLargeHour - currHour
     //! 区间最大值和当前小时的差值大于等于2且有次数的时候，计时器间隔重新计算
-    if (difference >= 2 && startNum > 0) {
-      delay = (difference - 1) / startNum * 60 * 60 * 1000
-    }
     if (currDay !== now) {
       today = currDate
       startNum ^= endNum ^= startNum ^= endNum
     }
     setTimeout(() => {
-      this.everyDayOnceTask({ callback, today, startNum, intervalHours, delay, endNum })
-    }, delay)
+      this.everyDayManyTask({ callback, today, startNum, intervalHours, delay, endNum })
+    }, initDelay)
   }
   getDingTalkBody (params, msgtype) {
     if (msgtype === 'actionCard') {
@@ -264,6 +295,60 @@ class Main {
       })
     })
     return dingtalkRes2
+  }
+  // 整理掘金数据
+  arrangeJuejinData () {
+
+  }
+  // 掘金
+  async juejinSendMessage () {
+    if (this.juejinData.length === 0) {
+      const juejinRes = await errorCaptured(async () => {
+        return this.request({
+          protocol: 'https:',
+          host: 'web-api.juejin.im',
+          pathname: '/query',
+          method: 'post',
+          body: {
+            'operationName': '',
+            'query': '',
+            'variables': {
+              'tags': [],
+              'category': '5562b415e4b00c57d9b94ac8',
+              'first': 20,
+              'after': '',
+              'order': 'POPULAR'
+            },
+            'extensions': {
+              'query': {
+                'id': '653b587c5c7c8a00ddf67fc66f989d42'
+              }
+            }
+          }
+        })
+      })
+      if (juejinRes[1]) {
+        this.zhihuData = JSON.parse(juejinRes[1]).data
+      }
+    }
+    if (this.juejinData.length === 0) {
+      return
+    }
+    const data = this.arrangeJuejinData()
+    const body = this.getDingTalkBody(data, 'feedCard')
+    // 前端技术大佬内部群
+    await errorCaptured(async () => {
+      return this.request({
+        protocol: 'https:',
+        host: 'oapi.dingtalk.com',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8'
+        },
+        pathname: '/robot/send?access_token=39e10e2a467663a13a5df7b2400948c2cd9f73fc9bb8b4a67c65ed4090f1d2e5',
+        method: 'post',
+        body
+      })
+    })
   }
   robot () {
     const leetcodeDelay = 10 * 60 * 1000
